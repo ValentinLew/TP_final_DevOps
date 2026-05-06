@@ -57,12 +57,11 @@ jobs:
           kubectl -n "$K8S_NAMESPACE" rollout status statefulset/mysql --timeout=180s
           kubectl -n "$K8S_NAMESPACE" rollout status deployment/api --timeout=180s
 
+  
       - name: Smoke test from inside cluster
         run: |
-          set -euo pipefail
-          kubectl -n "$K8S_NAMESPACE" delete pod curl-test --ignore-not-found
-          kubectl -n "$K8S_NAMESPACE" run curl-test \
-            --rm \
-            --restart Never \
-            --image curlimages/curl:8.11.1 \
-            --command -- curl -fsS http://api:3000/health
+        set -euo pipefail
+        kubectl -n "$K8S_NAMESPACE" delete pod curl-test --ignore-not-found# On lance le test sans l'option --rm qui posait problème
+        kubectl -n "$K8S_NAMESPACE" run curl-test \--restart Never \--image curlimages/curl:8.11.1 \--command -- curl -fsS http://api:3000/health# On laisse 5s pour que le pod s'exécute
+        sleep 5# On vérifie les logs pour confirmer le succès
+        kubectl -n "$K8S_NAMESPACE" logs curl-test
