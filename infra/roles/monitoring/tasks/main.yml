@@ -1,0 +1,159 @@
+---
+- name: Install monitoring base packages
+  ansible.builtin.apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - prometheus
+      - prometheus-node-exporter
+      - python3-apt
+    state: present
+    update_cache: true
+
+- name: Enable node_exporter on monitoring node
+  ansible.builtin.systemd:
+    name: prometheus-node-exporter
+    state: started
+    enabled: true
+
+- name: Configure Prometheus scrape targets
+  ansible.builtin.copy:
+    dest: /etc/prometheus/prometheus.yml
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      global:
+        scrape_interval: 15s
+
+      scrape_configs:
+        - job_name: prometheus
+          static_configs:
+            - targets:
+                - localhost:9090
+
+        - job_name: node_exporter
+          static_configs:
+            - targets:
+                - {{ k3s_ip }}:9100
+                - {{ monitoring_ip }}:9100
+  notify: Restart prometheus
+
+- name: Ensure Grafana keyring directory exists
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Install Grafana repository key
+  ansible.builtin.shell: |
+    set -eu
+    curl -fsSL https://apt.grafana.com/gpg.key | gpg --dearmor -o /etc/apt/keyrings/grafana.gpg
+  args:
+    creates: /etc/apt/keyrings/grafana.gpg
+
+- name: Add Grafana apt repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main"
+    filename: grafana
+    state: present
+
+- name: Install Grafana
+  ansible.builtin.apt:
+    name: grafana
+    state: present
+    update_cache: true
+
+- name: Create Grafana datasource provisioning directory
+  ansible.builtin.file:
+    path: /etc/grafana/provisioning/datasources
+    state: directory
+    owner: root
+    group: grafana
+    mode: "0755"
+
+- name: Provision Prometheus datasource
+  ansible.builtin.copy:
+    dest: /etc/grafana/provisioning/datasources/prometheus.yml
+    owner: root
+    group: grafana
+    mode: "0644"
+    content: |
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          access: proxy
+          url: http://localhost:9090
+          isDefault: true
+          editable: true
+  notify: Restart grafana
+
+- name: Enable Grafana
+  ansible.builtin.systemd:
+    name: grafana-server
+    state: started
+    enabled: true
+
+- name: Wait for Grafana API
+  ansible.builtin.uri:
+    url: http://127.0.0.1:3000/api/health
+    method: GET
+    status_code: 200
+  register: grafana_health
+  retries: 20
+  delay: 6
+  until: grafana_health.status == 200
+
+- name: Create Grafana dashboard directory
+  ansible.builtin.file:
+    path: /var/lib/grafana/dashboards
+    state: directory
+    owner: grafana
+    group: grafana
+    mode: "0755"
+
+- name: Download Node Exporter Full dashboard
+  ansible.builtin.get_url:
+    url: https://grafana.com/api/dashboards/1860/revisions/latest/download
+    dest: /var/lib/grafana/dashboards/node-exporter-full.json
+    owner: grafana
+    group: grafana
+    mode: "0644"
+  notify: Restart grafana
+
+- name: Bind dashboard datasource to provisioned Prometheus datasource
+  ansible.builtin.replace:
+    path: /var/lib/grafana/dashboards/node-exporter-full.json
+    regexp: "\\$\\{DS_PROMETHEUS\\}"
+    replace: "Prometheus"
+  notify: Restart grafana
+
+- name: Create Grafana dashboard provider directory
+  ansible.builtin.file:
+    path: /etc/grafana/provisioning/dashboards
+    state: directory
+    owner: root
+    group: grafana
+    mode: "0755"
+
+- name: Provision Node Exporter dashboard provider
+  ansible.builtin.copy:
+    dest: /etc/grafana/provisioning/dashboards/node-exporter.yml
+    owner: root
+    group: grafana
+    mode: "0644"
+    content: |
+      apiVersion: 1
+      providers:
+        - name: node-exporter
+          orgId: 1
+          folder: Infrastructure
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards
+  notify: Restart grafana

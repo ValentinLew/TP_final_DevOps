@@ -1,0 +1,64 @@
+---
+- name: Install base packages for k3s and CI
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - docker.io
+      - git
+      - gnupg
+      - prometheus-node-exporter
+      - python3
+      - python3-apt
+    state: present
+    update_cache: true
+
+- name: Enable Docker for CI image builds
+  ansible.builtin.systemd:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Add vagrant user to docker group
+  ansible.builtin.user:
+    name: vagrant
+    groups: docker
+    append: true
+
+- name: Enable node_exporter on k3s
+  ansible.builtin.systemd:
+    name: prometheus-node-exporter
+    state: started
+    enabled: true
+
+- name: Install k3s server
+  ansible.builtin.shell: |
+    set -eu
+    curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--write-kubeconfig-mode 644" sh -
+  args:
+    creates: /usr/local/bin/k3s
+
+- name: Ensure kube directory exists for vagrant
+  ansible.builtin.file:
+    path: /home/vagrant/.kube
+    state: directory
+    owner: vagrant
+    group: vagrant
+    mode: "0755"
+
+- name: Copy kubeconfig for vagrant user
+  ansible.builtin.copy:
+    src: /etc/rancher/k3s/k3s.yaml
+    dest: /home/vagrant/.kube/config
+    remote_src: true
+    owner: vagrant
+    group: vagrant
+    mode: "0600"
+
+- name: Wait for k3s node to be ready
+  ansible.builtin.command: /usr/local/bin/kubectl get nodes
+  changed_when: false
+  register: k3s_nodes
+  retries: 20
+  delay: 6
+  until: k3s_nodes.rc == 0

@@ -1,0 +1,13 @@
+---
+- name: Configure k3s node
+  hosts: k3s
+  become: true
+  roles:
+    - k3s
+    - runner
+
+- name: Configure monitoring node
+  hosts: monitoring
+  become: true
+  roles:
+    - monitoring

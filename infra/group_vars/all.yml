@@ -1,0 +1,4 @@
+k3s_ip: "192.168.56.10"
+monitoring_ip: "192.168.56.20"
+github_runner_version: "2.333.1"
+github_runner_name: "k3s-runner"

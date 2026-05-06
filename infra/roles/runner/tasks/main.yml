@@ -1,0 +1,96 @@
+---
+- name: Skip runner installation when token or repository URL is missing
+  ansible.builtin.meta: end_host
+  when: github_runner_token is not defined or github_repo_url is not defined
+  tags:
+    - runner
+
+- name: Install runner dependencies
+  ansible.builtin.apt:
+    name:
+      - curl
+      - git
+      - libicu72
+      - tar
+    state: present
+    update_cache: true
+  tags:
+    - runner
+
+- name: Create runner directory
+  ansible.builtin.file:
+    path: /opt/actions-runner
+    state: directory
+    owner: vagrant
+    group: vagrant
+    mode: "0755"
+  tags:
+    - runner
+
+- name: Download GitHub Actions runner
+  ansible.builtin.get_url:
+    url: "https://github.com/actions/runner/releases/download/v{{ github_runner_version }}/actions-runner-linux-x64-{{ github_runner_version }}.tar.gz"
+    dest: "/tmp/actions-runner-linux-x64-{{ github_runner_version }}.tar.gz"
+    mode: "0644"
+  tags:
+    - runner
+
+- name: Extract GitHub Actions runner
+  ansible.builtin.unarchive:
+    src: "/tmp/actions-runner-linux-x64-{{ github_runner_version }}.tar.gz"
+    dest: /opt/actions-runner
+    remote_src: true
+    owner: vagrant
+    group: vagrant
+    creates: /opt/actions-runner/config.sh
+  tags:
+    - runner
+
+- name: Install runner runtime dependencies
+  ansible.builtin.command: ./bin/installdependencies.sh
+  args:
+    chdir: /opt/actions-runner
+  changed_when: false
+  tags:
+    - runner
+
+- name: Configure self-hosted runner
+  ansible.builtin.command: >
+    ./config.sh
+    --url {{ github_repo_url }}
+    --token {{ github_runner_token }}
+    --name {{ github_runner_name }}
+    --labels self-hosted,linux,k3s
+    --unattended
+    --replace
+  args:
+    chdir: /opt/actions-runner
+    creates: /opt/actions-runner/.runner
+  become_user: vagrant
+  no_log: true
+  tags:
+    - runner
+
+- name: Check if runner service is already installed
+  ansible.builtin.find:
+    paths: /etc/systemd/system
+    patterns: "actions.runner.*.service"
+  register: runner_services
+  tags:
+    - runner
+
+- name: Install runner service
+  ansible.builtin.command: ./svc.sh install vagrant
+  args:
+    chdir: /opt/actions-runner
+  when: runner_services.matched == 0
+  tags:
+    - runner
+
+- name: Start runner service
+  ansible.builtin.command: ./svc.sh start
+  args:
+    chdir: /opt/actions-runner
+  changed_when: false
+  tags:
+    - runner
