@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: mysql-init
-  namespace: lacets_connecte
+  namespace: lacets-connecte
 data:
   init-db.sql: |
     CREATE DATABASE IF NOT EXISTS my_db

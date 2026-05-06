@@ -8,7 +8,7 @@ Le dépôt est organisé pour séparer les responsabilités :
 
 *   **`app/`** : Code source de l'API (Node.js/Express). Inclut un `Dockerfile` pour la production et des sondes de santé (`/health`).
 *   **`infra/`** : Infrastructure as Code (IaC). Gestion des deux VM Debian via **Vagrant** et provisionnement logiciel par **Ansible**.
-*   **`k8s/`** : Manifestes Kubernetes (Namespace `lacets_connecte`, MySQL StatefulSet, PVC, Deployment API, et HPA).
+*   **`k8s/`** : Manifestes Kubernetes (Namespace `lacets-connecte`, MySQL StatefulSet, PVC, Deployment API, et HPA).
 *   **`.github/workflows/deploy.yml`** : Pipeline CI/CD automatisant le build Docker et la mise à jour du cluster.
 
 ### Adressage Réseau Fixe
@@ -69,14 +69,14 @@ Le déploiement de l'application métier est géré par un **self-hosted runner*
 
 ##  Orchestration Kubernetes
 
-L'application est cloisonnée dans le namespace `lacets_connecte`. La stack K8s comprend :
+L'application est cloisonnée dans le namespace `lacets-connecte`. La stack K8s comprend :
 *   **Base de données :** MySQL 8.4 avec persistance des données (`1Gi`).
 *   **Scalabilité :** Un Horizontal Pod Autoscaler (HPA) ajuste le nombre de pods API (de 1 à 3) selon l'usage.
 *   **Accès :** Le service API est en `ClusterIP` pour une sécurité accrue (non joignable directement depuis l'hôte).
 
 **Test de l'API depuis le cluster :**
 ```bash
-kubectl run curl-test -n lacets_connecte --rm -i --tty --image=curlimages/curl -- curl http://api.lacets_connecte.svc.cluster.local:3000/health
+kubectl run curl-test -n lacets-connecte --rm -i --tty --image=curlimages/curl -- curl http://api.lacets-connecte.svc.cluster.local:3000/health
 ```
 
 ---
@@ -93,7 +93,7 @@ La surveillance est accessible immédiatement après le déploiement Ansible :
 ##  Commandes Utiles
 
 *   **État des VM :** `vagrant status`
-*   **Logs Kubernetes :** `kubectl get pods -n lacets_connecte`
+*   **Logs Kubernetes :** `kubectl get pods -n lacets-connecte`
 *   **Vérification Demo :** `bash infra/scripts/check-demo.sh`
 *   **Accès K3s :** `vagrant ssh k3s`
 

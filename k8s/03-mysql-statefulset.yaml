@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: mysql
-  namespace: lacets_connecte
+  namespace: lacets-connecte
 spec:
   clusterIP: None
   selector:
@@ -16,7 +16,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: mysql
-  namespace: lacets_connecte
+  namespace: lacets-connecte
 spec:
   serviceName: mysql
   replicas: 1

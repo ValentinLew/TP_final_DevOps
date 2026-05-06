@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: api
-  namespace: lacets_connecte
+  namespace: lacets-connecte
 spec:
   type: ClusterIP
   selector:
@@ -16,7 +16,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: api
-  namespace: lacets_connecte
+  namespace: lacets-connecte
 spec:
   replicas: 1
   selector:
@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
         - name: api
-          image: docker.io/DOCKERHUB_USERNAME/lacets_connecte-api:latest
+          image: docker.io/DOCKERHUB_USERNAME/lacets-connecte-api:latest
           imagePullPolicy: Always
           ports:
             - name: http

@@ -1,4 +1,4 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: lacets_connecte
+  name: lacets-connecte

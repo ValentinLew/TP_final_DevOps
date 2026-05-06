@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE_NAME: lacets_connecte-api
-  K8S_NAMESPACE: lacets_connecte
+  IMAGE_NAME: lacets-connecte-api
+  K8S_NAMESPACE: lacets-connecte
 
 jobs:
   deploy:
@@ -43,8 +43,8 @@ jobs:
           push: true
           # Utilisation du pseudo en dur pour éviter l'erreur de format
           tags: |
-            finnnnnnndus/lacets_connecte-api:${{ github.sha }}
-            finnnnnnndus/lacets_connecte-api:latest
+            finnnnnnndus/lacets-connecte-api:${{ github.sha }}
+            finnnnnnndus/lacets-connecte-api:latest
 
       - name: Deploy manifests
         run: |
@@ -52,7 +52,7 @@ jobs:
           # On applique les fichiers YAML du dossier k8s
           kubectl apply -k k8s
           # On force la mise à jour de l'image du déploiement
-          kubectl -n "$K8S_NAMESPACE" set image deployment/api api="finnnnnnndus/lacets_connecte-api:${{ github.sha }}"
+          kubectl -n "$K8S_NAMESPACE" set image deployment/api api="finnnnnnndus/lacets-connecte-api:${{ github.sha }}"
           # On attend que tout soit prêt
           kubectl -n "$K8S_NAMESPACE" rollout status statefulset/mysql --timeout=180s
           kubectl -n "$K8S_NAMESPACE" rollout status deployment/api --timeout=180s
