@@ -41,18 +41,19 @@ jobs:
         with:
           context: ./app
           push: true
-          # On utilise directement le secret ici, Docker Hub comprendra
+          # Utilisation du pseudo en dur pour éviter l'erreur de format
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/lacets_connecte-api:${{ github.sha }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/lacets_connecte-api:latest
+            finnnnnnndus/lacets_connecte-api:${{ github.sha }}
+            finnnnnnndus/lacets_connecte-api:latest
 
       - name: Deploy manifests
         run: |
           set -euo pipefail
-          # On définit le user localement pour être sûr que kubectl le voit
-          D_USER="${{ secrets.DOCKERHUB_USERNAME }}"
+          # On applique les fichiers YAML du dossier k8s
           kubectl apply -k k8s
-          kubectl -n "$K8S_NAMESPACE" set image deployment/api api="$D_USER/lacets_connecte-api:${{ github.sha }}"
+          # On force la mise à jour de l'image du déploiement
+          kubectl -n "$K8S_NAMESPACE" set image deployment/api api="finnnnnnndus/lacets_connecte-api:${{ github.sha }}"
+          # On attend que tout soit prêt
           kubectl -n "$K8S_NAMESPACE" rollout status statefulset/mysql --timeout=180s
           kubectl -n "$K8S_NAMESPACE" rollout status deployment/api --timeout=180s
 
