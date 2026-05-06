@@ -6,7 +6,7 @@ cd "$ROOT_DIR"
 
 mkdir -p "$HOME/.ssh"
 if [ ! -f "$HOME/.ssh/vagrant_insecure_key" ]; then
-  cp "/mnt/c/Users/kilaw/.vagrant.d/insecure_private_key" "$HOME/.ssh/vagrant_insecure_key"
+  cp "$ROOT_DIR/.vagrant.d/insecure_private_key" "$HOME/.ssh/vagrant_insecure_key"
   chmod 600 "$HOME/.ssh/vagrant_insecure_key"
 fi
 

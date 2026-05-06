@@ -41,15 +41,18 @@ jobs:
         with:
           context: ./app
           push: true
+          # On utilise directement le secret ici, Docker Hub comprendra
           tags: |
-            docker.io/${{ secrets.DOCKERHUB_USERNAME }}/lacets_connecte-api:${{ github.sha }}
-            docker.io/${{ secrets.DOCKERHUB_USERNAME }}/lacets_connecte-api:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/lacets_connecte-api:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/lacets_connecte-api:latest
 
       - name: Deploy manifests
         run: |
           set -euo pipefail
+          # On définit le user localement pour être sûr que kubectl le voit
+          D_USER="${{ secrets.DOCKERHUB_USERNAME }}"
           kubectl apply -k k8s
-          kubectl -n "$K8S_NAMESPACE" set image deployment/api api="docker.io/${{ secrets.DOCKERHUB_USERNAME }}/lacets_connecte-api:${{ github.sha }}"
+          kubectl -n "$K8S_NAMESPACE" set image deployment/api api="$D_USER/lacets_connecte-api:${{ github.sha }}"
           kubectl -n "$K8S_NAMESPACE" rollout status statefulset/mysql --timeout=180s
           kubectl -n "$K8S_NAMESPACE" rollout status deployment/api --timeout=180s
 
