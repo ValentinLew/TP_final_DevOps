@@ -1,4 +1,4 @@
-# 👟 Système Cloud & DevOps : API Lacets Connectés (K3s & Monitoring)
+# Système Cloud & DevOps : API Lacets Connectés (K3s & Monitoring) Lewandowski Valentin, Dumas Philippe
 
 Ce projet propose une solution automatisée pour déployer une infrastructure complète de type Cloud. Il orchestre une API Node.js/Express connectée à une base MySQL sous Kubernetes, avec une chaîne de livraison continue (CI/CD) via GitHub Actions et un écosystème de surveillance Prometheus/Grafana.
 
@@ -64,6 +64,7 @@ Le déploiement de l'application métier est géré par un **self-hosted runner*
 1.  **Enregistrement :** Allez sur GitHub (`Settings > Actions > Runners`) pour obtenir un token.
 2.  **Liaison :** `bash infra/scripts/register-runner.sh [https://github.com/](https://github.com/)<user>/<repo> <token>`
 3.  **Secrets :** Ajoutez `DOCKERHUB_USERNAME` et `DOCKERHUB_TOKEN` dans les secrets de votre dépôt.
+4.  Il vous sera peut être nécessaire de modifier et ajouter votre pseudo dans le deploy.yaml à la place de l'actuel "phidums" pour que l'envoie vers docker fonctionne correctement
 
 ---
 
@@ -103,3 +104,8 @@ La surveillance est accessible immédiatement après le déploiement Ansible :
 *   **Bootstrap :** Un runner GitHub ne peut pas créer la VM sur laquelle il est censé s'enregistrer ; cette étape reste donc locale.
 *   **Initialisation SQL :** Si le PVC existe déjà, le script `init-db.sql` ne sera pas rejoué. Supprimez le namespace pour une remise à zéro totale.
 *   **Sécurité :** Les secrets YAML sont fournis pour la démonstration. En production, utilisez des solutions comme SealedSecrets ou Vault.
+*   Instabilité du Smoke Test (--rm) : Nous avons identifié que l'option --rm de la commande kubectl run se comporte de manière imprévisible dans notre environnement virtualisé (erreur : --rm should only be used for attached containers).
+
+Le programme ayant été lancé depuis le pc de philippe, les derniers logs(kilaw) correspondent au pc fixe de valentin mais le système à bel et bien fonctionné sur les différents pc comme en témoigne les workflows.
+
+TP DevOps final de Lewandowski Valentin et Dumas Philippe.
